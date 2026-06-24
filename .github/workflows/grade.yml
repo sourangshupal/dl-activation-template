@@ -1,0 +1,30 @@
+name: Grade Assignment
+
+on: [push]
+
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run tests and generate score
+        run: |
+          pip install pytest -q
+          python -m pytest test_main.py -v --tb=short 2>&1 | tee test_output.txt || true
+          PASSED=$(grep -c " PASSED" test_output.txt || echo 0)
+          TOTAL=8
+          SCORE=$(( PASSED * 100 / TOTAL ))
+          echo "{\"passed_tests\": $PASSED, \"total_tests\": $TOTAL, \"score\": $SCORE}" > score.json
+          cat score.json
+
+      - name: Upload score artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: score
+          path: score.json
